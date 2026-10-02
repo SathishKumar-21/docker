@@ -1,10 +1,19 @@
-FROM python:3.12
+FROM python:3.12 AS builder
 
 WORKDIR /app
 
-COPY app/ .
+COPY app/requirements.txt .
 
-RUN pip install -r requirements.txt
+RUN pip install --prefix=/install -r requirements.txt
+
+
+FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY --from=builder /install /usr/local
+
+COPY app/ .
 
 EXPOSE 5000
 
