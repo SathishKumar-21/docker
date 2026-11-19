@@ -8,8 +8,8 @@ services:
       - APP_ENV=production
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_NAME=appdb
-      - DB_PASSWORD=secret
+      - DB_NAME=${POSTGRES_DB:-appdb}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
     depends_on:
       postgres:
         condition: service_healthy
@@ -21,8 +21,8 @@ services:
     image: postgres:15-alpine
     container_name: postgres
     environment:
-      - POSTGRES_PASSWORD=secret
-      - POSTGRES_DB=appdb
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      - POSTGRES_DB=${POSTGRES_DB:-appdb}
     volumes:
       - pg-data:/var/lib/postgresql/data
     networks:
