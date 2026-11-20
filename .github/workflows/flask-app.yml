@@ -1,0 +1,45 @@
+name: flask-app image
+
+on:
+  push:
+    branches: [main]
+    paths: # only run when this project (or this pipeline) changes
+      - "flask-app/**"
+      - ".github/workflows/flask-app.yml"
+  workflow_dispatch: # manual "Run workflow" button
+
+permissions:
+  id-token: write # allow this job to request the GitHub OIDC token
+  contents: read  # checkout only
+
+concurrency:
+  group: flask-app-image
+  cancel-in-progress: false
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: flask-app
+    env:
+      IMAGE: ${{ vars.ACR_NAME }}.azurecr.io/flask-app
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login (OIDC, no secret)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: ACR login
+        run: az acr login --name "${{ vars.ACR_NAME }}"
+
+      - name: Build and push (tag = short git SHA)
+        run: |
+          TAG="${GITHUB_SHA::7}"
+          docker build -t "$IMAGE:$TAG" .
+          docker push "$IMAGE:$TAG"
+          echo "Pushed \`$IMAGE:$TAG\`" >> "$GITHUB_STEP_SUMMARY"
